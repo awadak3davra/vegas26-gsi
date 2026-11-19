@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expose aux/physical rear cameras in Aperture. LineageOS defaults these off on a GSI. -->
+    <bool name="config_enableAuxCameras">true</bool>
+    <bool name="config_ignoreLogicalAuxCameras">false</bool>
+    <!-- If a wrong/duplicate lens appears, tune with config_ignoredAuxCameraIds / config_logicalZoomRatios. -->
+</resources>

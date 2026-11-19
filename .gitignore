@@ -1,0 +1,29 @@
+# Device-unique secrets and dumps - NEVER commit these
+*.img
+*.img.xz
+*.bin
+private-backups/
+stock-firmware/
+*md1img*
+*lk_a*
+*lk_b*
+frp*
+nvram*
+nvdata*
+seccfg*
+persist*
+protect*
+proinfo*
+prodpersist*
+*.keystore
+*.pk8
+*.x509.pem
+secret*
+*secret*
+
+# Build intermediates / outputs
+out/
+*.apk
+compiled.zip
+unsigned.apk
+*.log

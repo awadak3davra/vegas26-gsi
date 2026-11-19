@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Centered hole-punch for vegas26 (1080x2388). Origin is top-center, x=0 is horizontal center, px units.
+         Circle: center (0,83), radius 44. Tune center-y and radius to match the real camera. -->
+    <string name="config_mainBuiltInDisplayCutout" translatable="false">M 44,83 A 44,44 0 0 1 0,127 44,44 0 0 1 -44,83 44,44 0 0 1 0,39 44,44 0 0 1 44,83 Z</string>
+    <bool name="config_fillMainBuiltInDisplayCutout">true</bool>
+</resources>

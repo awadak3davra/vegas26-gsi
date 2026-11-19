@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Makes the stock LineageOS Aperture camera expose the aux (2nd) rear lens on vegas26.
+     Deploy in a trusted system partition (e.g. /product/overlay); sideloading to /data is
+     rejected on this GSI. UNTESTED on-device at time of writing; verify with `cmd overlay list`. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.vegas26.aperture.aux">
+    <application android:hasCode="false" android:label="Vegas26 Aperture Aux Cameras"/>
+    <overlay android:targetPackage="org.lineageos.aperture" android:priority="1" android:isStatic="true"/>
+</manifest>

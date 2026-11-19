@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.vegas26.cutout.hole">
+    <application android:hasCode="false" android:label="Vegas26 Centered Cutout"/>
+    <overlay android:targetPackage="android" android:priority="1" android:isStatic="false"/>
+</manifest>
