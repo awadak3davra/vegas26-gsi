@@ -11,6 +11,7 @@ Verified end to end on a real device, 2026-11.
 - [What you get](#what-you-get)
 - [Tested device / compatibility](#tested-device--compatibility)
 - [Warnings](#warnings)
+- [Before you start](#before-you-start)
 - [Prerequisites](#prerequisites)
 - [How the pieces fit (the layer model)](#how-the-pieces-fit-the-layer-model)
 - [Part 1: Bootloader unlock](#part-1-bootloader-unlock)
@@ -18,6 +19,7 @@ Verified end to end on a real device, 2026-11.
 - [Part 3: SIM / network unlock (modem)](#part-3-sim--network-unlock-modem)
 - [Part 4: Cellular, APN and VoLTE](#part-4-cellular-apn-and-volte)
 - [Part 5: Optional polish (cameras, cutout, density)](#part-5-optional-polish-cameras-cutout-density)
+- [Troubleshooting](#troubleshooting)
 - [How updates work](#how-updates-work)
 - [Repo contents](#repo-contents)
 - [Credits and prior work](#credits-and-prior-work)
@@ -53,6 +55,14 @@ If your `-4-x`, patch, or kernel differ, re-verify every step. A tool printing "
 
 Experimental and firmware-specific. Bootloader and modem modification can brick a device with no guaranteed recovery. Unlocking wipes userdata. Do this only on a device you own and are willing to lose. SIM-unlocking a phone you own is legal in the US (Unlocking Consumer Choice and Wireless Competition Act). Never publish your serial number, unlock keys, or dumps of `frp`/`nvram`/`nvdata`/`seccfg`/`persist`/`protect*`/`md1img`; they are device-unique. Placeholders like `<YOUR SERIAL>` and `<SECRET>` in this guide must stay redacted in anything you share.
 
+## Before you start
+
+- **Skill level:** intermediate. You should be comfortable running commands in a terminal and with basic `adb`/`fastboot`. If you have never flashed a phone, read the platform-tools docs and practice `adb devices` / `fastboot devices` first.
+- **Time:** plan a full afternoon for Parts 1-4. Part 5 is optional.
+- **You need:** the phone (XT2617V), a Windows PC (Linux works too with small changes), a good **data** USB cable plugged directly into the PC (no hubs), and a SIM card to test cellular.
+- **Order matters:** do the Part 1 backup before changing anything. It is your only way back.
+- **Device-specific files are yours to create:** your partition backups, your unlock `<SECRET>` and keys, and your patched LK come from *your* phone. Nothing in this repo replaces them, and you should never use someone else's.
+
 ## Prerequisites
 
 Tools:
@@ -64,7 +74,9 @@ Tools:
 
 Downloads and prior guides this builds on:
 
-- **Base bootloader guide** (validated on `-4-2`): `parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide`
+- **Base bootloader guide** (validated on `-4-2`; source of the pinned APK hashes used in Part 1): `parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide`
+- **DFRoot** (temporary root via CVE-2026-43284, used in Part 1): https://github.com/diabl0w/DFRoot (see its [wiki](https://github.com/diabl0w/DFRoot/wiki) and Releases)
+- **KernelSU manager** (used with DFRoot): https://github.com/tiann/KernelSU/releases
 - **LK bootloader patcher (Val Protocol):** https://github.com/Maikyxd/val-protocol
 - **Modem SIM-unlock tool (vegas-freedom):** https://github.com/andrewwm/vegas-freedom
 - **LineageOS microG GSI builds:** the lineageos-4-microg / Colors project (SourceForge), or the MisterZtr GSI index: https://github.com/MisterZtr/LineageOS_gsi
@@ -259,6 +271,21 @@ This step needs root, once. On this device:
 This is the one advanced, device-specific step and was not fully hardened in this writeup; treat it as a starting point and verify `cmd overlay list` shows your overlays enabled after a reboot.
 
 ---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `fastboot devices` is empty, or a command hangs on `< waiting for any device >` | Fastboot driver not bound for this mode | Bind "Android Bootloader Interface" in Device Manager (Part 1.3). Bootloader and fastbootd are **separate devices**, bind both. |
+| `adb` keeps dropping every couple of minutes | Windows USB power saving | Disable USB selective suspend (Power Options), use a direct port, replug. |
+| `adb root` makes the phone vanish from USB | adbd restart drops the USB gadget on this GSI | Don't use `adb root`. Use plain adb, or Magisk for root. |
+| GSI boots once, then "Can't load Android system" on every reboot | `fastboot -w` doesn't format `/data` | Wipe via **recovery factory reset** (Part 2.2). |
+| Can't find "Wipe data" in recovery | Menu is hidden behind "No command" | Hold **Power**, tap **Volume Up** once (Part 2.2). |
+| `fastboot oem unlock` says "Check 'Allow OEM Unlock'" | Carrier restriction | `frp` last-byte bypass (Part 1.4). |
+| "SIM network unlock PIN" / `NETWORK_LOCKED` | Carrier lock in the modem | Part 3. |
+| Signal bars but no data, "!" on the signal icon | Wrong or missing APN | Select the `ereseller` (or your carrier's) APN, toggle airplane mode (Part 4.1). |
+| Calls fail but data works | GSI lacks MediaTek IMS | Use LineageOS 23.2 microG (ships `com.mediatek.ims`). |
+| Overlay install fails: "signed with different certificates" | Framework overlays can't be sideloaded on this GSI | Deploy to `/product/overlay` with root (Part 5.4). |
 
 ## How updates work
 
