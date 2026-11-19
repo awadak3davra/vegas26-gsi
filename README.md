@@ -74,7 +74,7 @@ Tools:
 
 Downloads and prior guides this builds on:
 
-- **Base bootloader guide** (validated on `-4-2`; source of the pinned APK hashes used in Part 1): `parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide`
+- **Base bootloader guide** (validated on `-4-2`; source of the pinned APK hashes used in Part 1): [parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide](https://github.com/parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide)
 - **DFRoot** (temporary root via CVE-2026-43284, used in Part 1): https://github.com/diabl0w/DFRoot (see its [wiki](https://github.com/diabl0w/DFRoot/wiki) and Releases)
 - **KernelSU manager** (used with DFRoot): https://github.com/tiann/KernelSU/releases
 - **LK bootloader patcher (Val Protocol):** https://github.com/Maikyxd/val-protocol
@@ -306,7 +306,7 @@ Your `/data`, apps, settings, your `/product` overlays (Part 5), and your modem 
 
 ## Credits and prior work
 
-- Base bootloader guide: `parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide`
+- Base bootloader guide: [parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide](https://github.com/parsimo2010/moto-g-power-2026-straight-talk-wifi-root-guide)
 - LK patcher: [Maikyxd/val-protocol](https://github.com/Maikyxd/val-protocol)
 - Modem SIM-unlock: [andrewwm/vegas-freedom](https://github.com/andrewwm/vegas-freedom)
 - LineageOS GSI builds: the lineageos-4-microg / Colors project, and [MisterZtr/LineageOS_gsi](https://github.com/MisterZtr/LineageOS_gsi)
