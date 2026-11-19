@@ -11,6 +11,7 @@ Verified end to end on a real device, 2026-11.
 - [What you get](#what-you-get)
 - [Tested device / compatibility](#tested-device--compatibility)
 - [Warnings](#warnings)
+- [Using an AI assistant](#using-an-ai-assistant)
 - [Before you start](#before-you-start)
 - [Prerequisites](#prerequisites)
 - [How the pieces fit (the layer model)](#how-the-pieces-fit-the-layer-model)
@@ -56,6 +57,35 @@ If your `-4-x`, patch, or kernel differ, re-verify every step. A tool printing "
 **Safety and legal notice:** use this guide only on devices you own or are explicitly authorized to service. It is intended for repair, interoperability, and personal recovery work. It never modifies the IMEI.
 
 Experimental and firmware-specific. Bootloader and modem modification can brick a device with no guaranteed recovery. Unlocking wipes userdata. Do this only on a device you own and are willing to lose. SIM-unlocking a phone you own is legal in the US (Unlocking Consumer Choice and Wireless Competition Act). Never publish your serial number, unlock keys, or dumps of `frp`/`nvram`/`nvdata`/`seccfg`/`persist`/`protect*`/`md1img`; they are device-unique. Placeholders like `<YOUR SERIAL>` and `<SECRET>` in this guide must stay redacted in anything you share.
+
+## Using an AI assistant
+
+You can have an AI coding assistant (Claude Code, Codex, OpenCode, and similar) walk you through this guide and run most of the commands for you.
+
+**1. Open the assistant inside this repo** so it reads the context files (`AGENTS.md`, `CLAUDE.md`) automatically:
+
+```
+git clone https://github.com/qfertig/vegas26-gsi.git
+cd vegas26-gsi
+claude        # or: codex / opencode
+```
+
+**2. Paste this as your first message** (fill in the brackets):
+
+```
+This is my own Motorola Moto G Power 2026 (XT2617V, vegas26), and I want to follow the guide
+in this repo (README.md; context and safety rules are in AGENTS.md). Intended use: a device I
+own, for repair, interoperability, and personal recovery. Nothing here modifies the IMEI.
+
+My setup: [Windows/Linux], phone currently on [stock firmware / already unlocked / a GSI],
+carrier/SIM [your carrier], and I want to do [all parts / just Part X].
+
+Please walk me through it step by step: explain what each step does, run the adb/fastboot
+commands for me where you can, make sure I have my Part 1.2 backup before anything gets
+modified, and ask me before every flash, wipe, or unlock. Follow the safety rails in AGENTS.md.
+```
+
+If you're using a plain chat (not one of the tools above), paste the same message plus a link to this repo. The assistant won't see `AGENTS.md` there, so the message has to carry that context on its own.
 
 ## Before you start
 
