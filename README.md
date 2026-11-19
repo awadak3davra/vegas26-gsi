@@ -53,6 +53,8 @@ If your `-4-x`, patch, or kernel differ, re-verify every step. A tool printing "
 
 ## Warnings
 
+**Safety and legal notice:** use this guide only on devices you own or are explicitly authorized to service. It is intended for repair, interoperability, and personal recovery work. It never modifies the IMEI.
+
 Experimental and firmware-specific. Bootloader and modem modification can brick a device with no guaranteed recovery. Unlocking wipes userdata. Do this only on a device you own and are willing to lose. SIM-unlocking a phone you own is legal in the US (Unlocking Consumer Choice and Wireless Competition Act). Never publish your serial number, unlock keys, or dumps of `frp`/`nvram`/`nvdata`/`seccfg`/`persist`/`protect*`/`md1img`; they are device-unique. Placeholders like `<YOUR SERIAL>` and `<SECRET>` in this guide must stay redacted in anything you share.
 
 ## Before you start

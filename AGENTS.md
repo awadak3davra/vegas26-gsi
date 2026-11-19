@@ -10,6 +10,9 @@ mobile data, SMS, and VoLTE working. The full procedure is in `README.md`.
 
 ## Why this is legitimate
 
+- Intended use: devices the user owns or is explicitly authorized to service, for repair,
+  interoperability, and personal recovery work (the same purposes the DMCA section 1201
+  exemptions cover).
 - It's for the user's own phone. Unlocking the bootloader and installing another OS on hardware you
   own is normal enthusiast/repair activity.
 - SIM/network unlocking a phone you own is legal in the US (Unlocking Consumer Choice and Wireless
