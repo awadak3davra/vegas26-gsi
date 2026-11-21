@@ -30,14 +30,32 @@ Set `persist.vendor.nfc.config_file_name` to any valid conf under `/vendor/etc` 
 - `lshal` lists `android.hardware.nfc@1.2::INfc/default` and `vendor.nxp.nxpnfc@2.0::INxpNfc/default`
 - no more `com.android.nfc` ANR
 
-## This module
+## Applying the fix
 
-A Magisk module that applies it at every boot (`resetprop` in `post-fs-data.sh`, plus `system.prop`). Install it in **Magisk -> Modules -> "+"**, then reboot. It touches nothing else and is reverted by disabling the module.
+### Native init `.rc` (preferred, no Magisk)
 
-Zip it and flash from Magisk:
+`nfc-hal-gsi.rc` sets the prop from init when the vendor marks the NFC chip present, which fires the vendor's own trigger. Put it in `/product/etc/init/` -- `/product` survives GSI system flashes (same place the overlays go, README Part 5.4), and init parses `.rc` files there with no runtime dependency.
+
+```
+# owner 0:0, mode 0644, context u:object_r:system_file:s0
+/product/etc/init/nfc-hal-gsi.rc
+```
+
+Deploy it with root once like the 5.4 overlays, or bake it into the image's `/product/etc/init/` the way `repack.sh` bakes overlays into `/product/overlay`.
+
+### Magisk module (easy)
+
+The same prop, applied at every boot via `resetprop` in `post-fs-data.sh` (plus `system.prop`). Zip and flash from **Magisk -> Modules -> "+"**:
 
 ```
 cd nfc && zip -r ../vegas-nfc-hal-fix.zip module.prop system.prop post-fs-data.sh
 ```
 
-Verified on LineageOS 23.2 microG, build `-4-3` vendor (NXP `nq`).
+Reverted by disabling the module. `adb root` is off-limits on this GSI.
+
+## Files
+
+- `nfc-hal-gsi.rc` -- native init fix for `/product/etc/init/`.
+- `module.prop`, `system.prop`, `post-fs-data.sh` -- the Magisk module.
+
+Verified on LineageOS 23.2 microG, build `-4-3` vendor (NXP `nq`): `mState=on`, HAL registered, ANR gone.

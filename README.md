@@ -310,8 +310,9 @@ on property:ro.vendor.hw.nfc=nq && property:persist.vendor.nfc.config_file_name=
     start vendor.nfc_hal_service
 ```
 `ro.vendor.hw.nfc=nq` is set, but `persist.vendor.nfc.config_file_name` is empty on a GSI (stock sets it from a Motorola component that isn't present), so the trigger never fires and the HAL never registers.
-- **Fix:** set `persist.vendor.nfc.config_file_name` to any valid conf under `/vendor/etc` (e.g. `libnfc-nxp.conf`). The trigger fires, `vendor.nfc_hal_service` starts, the HAL registers, and NFC works (`dumpsys nfc` -> `mState=on`; `lshal` lists `android.hardware.nfc@1.2` and `vendor.nxp.nxpnfc@2.0`; no more ANR).
-- **Rooted (persistent):** the Magisk module in `nfc/` sets it at every boot. Install in **Magisk -> Modules -> "+"**, reboot. Same `/product`-survives-updates logic as 5.4, and `adb root` is still off-limits here.
+- **The fix:** set `persist.vendor.nfc.config_file_name` to any valid conf under `/vendor/etc` (e.g. `libnfc-nxp.conf`). The vendor trigger fires, `vendor.nfc_hal_service` starts, the HAL registers, and NFC works (`dumpsys nfc` -> `mState=on`; `lshal` lists `android.hardware.nfc@1.2` and `vendor.nxp.nxpnfc@2.0`; no more ANR).
+- **Native, no Magisk (preferred):** drop `nfc/nfc-hal-gsi.rc` into `/product/etc/init/`. `/product` survives GSI flashes (same as the 5.4 overlays) and init parses `.rc` files there with no runtime dependency; it `setprop`s the config when the vendor marks the NFC chip present, which fires the vendor's own trigger. Deploy it with root once like the 5.4 overlays (owner `0:0`, `0644`, context `u:object_r:system_file:s0`), or bake it into the image's `/product/etc/init/` the way `repack.sh` bakes overlays.
+- **Easy (Magisk):** the module in `nfc/` sets the same prop at every boot. Install in **Magisk -> Modules -> "+"**, reboot. `adb root` is still off-limits here.
 
 ---
 
@@ -347,7 +348,7 @@ Your `/data`, apps, settings, your `/product` overlays (Part 5), and your modem 
 - `overlays/cutout/` , framework RRO source for a centered display cutout (edit `res/values/config.xml` to match your camera).
 - `overlays/aperture-aux/` , RRO source to make the stock Aperture camera expose the 2nd rear lens.
 - `repack.sh` , reference script to build the overlays and (optionally) bake them into an ext4 GSI's `/system/product/overlay`, for anyone who wants a prebuilt image instead of deploying overlays by hand.
-- `nfc/` , Magisk module (and writeup) that starts the vendor NFC HAL on a GSI by setting `persist.vendor.nfc.config_file_name`.
+- `nfc/` , fix that starts the vendor NFC HAL on a GSI by setting `persist.vendor.nfc.config_file_name`: a native `/product/etc/init` `.rc` (`nfc-hal-gsi.rc`, no Magisk) and an equivalent Magisk module, with a writeup.
 
 ## Credits and prior work
 
