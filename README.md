@@ -281,6 +281,7 @@ All optional, all non-destructive. Two of these have a rootless path that works 
 
 ### 5.1 Second rear camera
 The HAL exposes all cameras (`dumpsys media.camera` shows 3). LineageOS Aperture hides the aux rear lens because `config_enableAuxCameras` defaults to false on a GSI.
+(The ultrawide only shows up because LineageOS reports `ro.product.manufacturer=motorola`: the vendor sensor HAL, `libcam.halsensor.so` `HalSensorList::isGsiMode()`, probes every sensor only when that property is `motorola` or `lenovo`, otherwise just main and front. A GSI that reports another maker, PixelOS for example, shows 2 cameras until it sets `ro.product.manufacturer=motorola`.)
 - **Rootless (works now):** install [Open Camera](https://f-droid.org/packages/net.sourceforge.opencamera/), set Settings, Camera API, Camera2 API; the camera-switch button (and the "camera +" control) selects the 2nd rear lens.
 - **Rooted (stock Material app):** deploy the Aperture RRO in `overlays/aperture-aux/` (sets `config_enableAuxCameras=true`) so the stock Aperture app itself shows both lenses. See 5.4 for deployment.
 
@@ -344,6 +345,7 @@ To check the first part on any build: `adb shell dumpsys sensorservice | grep -i
 | "SIM network unlock PIN" / `NETWORK_LOCKED` | Carrier lock in the modem | Part 3. |
 | Signal bars but no data, "!" on the signal icon | Wrong or missing APN | Select the `ereseller` (or your carrier's) APN, toggle airplane mode (Part 4.1). |
 | Calls fail but data works | GSI lacks MediaTek IMS | Use LineageOS 23.2 microG (ships `com.mediatek.ims`). |
+| `dumpsys media.camera` shows only 2 cameras (no ultrawide) | Vendor sensor HAL treats the system as a GSI unless `ro.product.manufacturer` is `motorola`/`lenovo`, and then probes only main and front | Check `adb shell getprop ro.product.manufacturer`; if it is not `motorola`, add `ro.product.manufacturer=motorola` to `props/system.prop` and bake (Part 5.1). |
 | Overlay install fails: "signed with different certificates" | Framework overlays can't be sideloaded on this GSI | Deploy to `/product/overlay` with root (Part 5.4). |
 | NFC won't turn on, `com.android.nfc` ANRs every ~15 s | Vendor NXP HAL never started (`persist.vendor.nfc.config_file_name` unset on a GSI) | Bake `init/vegas26-nfc.rc` with `repack.sh` (Part 5.5). |
 | Apps that need hardware key attestation fail; logcat: `RKP is disabled. System configured with no default URL` | No `remote_provisioning.hostname`, no factory attestation keybox on this phone | Bake `props/system.prop` with `repack.sh`, or set it from a Magisk `system.prop` (Part 5.5). |
