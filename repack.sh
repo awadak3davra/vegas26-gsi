@@ -14,7 +14,7 @@
 #   ./repack.sh build                      # build both overlay APKs into ./out/
 #   ./repack.sh bake  LineageOS-...-ext4-gsi.img.xz   # build + inject into the GSI
 #
-# `bake` also adds the system-side fixes from README Part 5.5 (NFC init rc, ...).
+# `bake` also adds the system-side fixes from README Part 5.5 (NFC init rc, props/system.prop, ...).
 #
 set -euo pipefail
 
@@ -93,6 +93,20 @@ do_bake() {
 
   echo ">> NFC: init rc that starts the vendor NXP HAL (README Part 5.5)"
   put_file "$img" "$HERE/init/vegas26-nfc.rc" "$SYSTEM_IN_IMG/etc/init/vegas26-nfc.rc"
+
+  echo ">> props: props/system.prop into /system/build.prop (README Part 5.5)"
+  rm -f "$OUT/build.prop"
+  debugfs -R "dump $SYSTEM_IN_IMG/build.prop $OUT/build.prop" "$img"
+  [ -s "$OUT/build.prop" ] || { echo "no $SYSTEM_IN_IMG/build.prop in the image" >&2; exit 1; }
+  printf '\n# vegas26-gsi repack.sh\n' >> "$OUT/build.prop"
+  local line key
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|'#'*) continue ;; esac
+    key="${line%%=*}"
+    sed -i "/^${key//./\\.}=/d" "$OUT/build.prop"   # ours replaces any existing value
+    echo "$line" >> "$OUT/build.prop"
+  done < "$HERE/props/system.prop"
+  put_file "$img" "$OUT/build.prop" "$SYSTEM_IN_IMG/build.prop"
 
   echo ">> fsck + recompress"
   e2fsck -fy "$img" || true

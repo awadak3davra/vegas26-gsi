@@ -309,6 +309,11 @@ These live in `system` (not `/product`), so they come from `repack.sh bake` and 
 - Verified on LineageOS 23.2 microG by setting the same property at boot from a Magisk module (`resetprop`): no more ANRs, the HAL registers, `dumpsys nfc` shows `mState=on`. The init-rc form is what the PixelOS port ships (HAL registered there).
 - Without baking: a Magisk module whose `post-fs-data.sh` runs `resetprop persist.vendor.nfc.config_file_name libnfc-nxp.conf` does the same.
 
+**Hardware key attestation (RKP).** The Trustonic KeyMint on this phone has no factory attestation keybox (there is no `attest_keybox.so` on `persist`); stock gets its attestation keys from Google's Remote Key Provisioning (`ro.rkp.csr_uploaded=1`). If the GSI does not set `remote_provisioning.hostname`, rkpd is off (`RKP is disabled. System configured with no default URL` in logcat) and every attested key generation fails (keystore2 `INVALID_ARGUMENT`). `props/system.prop` sets `remote_provisioning.hostname=remoteprovisioning.googleapis.com`; `bake` writes it into `/system/build.prop`. With it the attestation chain goes TEE to Google's roots.
+- Tested on the PixelOS 16 GSI (same vendor). **Not checked on LineageOS**: first run `adb shell getprop remote_provisioning.hostname`; if it already prints the Google host, this changes nothing.
+- This does not make Play Integrity STRONG: the TEE reports the bootloader as unlocked.
+- Without baking: put the same line in a Magisk module's `system.prop`.
+
 ---
 
 ## Troubleshooting
@@ -326,6 +331,7 @@ These live in `system` (not `/product`), so they come from `repack.sh bake` and 
 | Calls fail but data works | GSI lacks MediaTek IMS | Use LineageOS 23.2 microG (ships `com.mediatek.ims`). |
 | Overlay install fails: "signed with different certificates" | Framework overlays can't be sideloaded on this GSI | Deploy to `/product/overlay` with root (Part 5.4). |
 | NFC won't turn on, `com.android.nfc` ANRs every ~15 s | Vendor NXP HAL never started (`persist.vendor.nfc.config_file_name` unset on a GSI) | Bake `init/vegas26-nfc.rc` with `repack.sh` (Part 5.5). |
+| Apps that need hardware key attestation fail; logcat: `RKP is disabled. System configured with no default URL` | No `remote_provisioning.hostname`, no factory attestation keybox on this phone | Bake `props/system.prop` with `repack.sh`, or set it from a Magisk `system.prop` (Part 5.5). |
 
 ## How updates work
 
@@ -343,6 +349,7 @@ Your `/data`, apps, settings, your `/product` overlays (Part 5), and your modem 
 - `overlays/cutout/` , framework RRO source for a centered display cutout (edit `res/values/config.xml` to match your camera).
 - `overlays/aperture-aux/` , RRO source to make the stock Aperture camera expose the 2nd rear lens.
 - `init/vegas26-nfc.rc` , init snippet that starts the vendor NFC HAL on a GSI (Part 5.5).
+- `props/system.prop` , system properties `repack.sh` writes into `/system/build.prop` (Part 5.5).
 - `repack.sh` , reference script to build the overlays and (optionally) bake them into an ext4 GSI's `/system/product/overlay`, for anyone who wants a prebuilt image instead of deploying overlays by hand.
 
 ## Credits and prior work
