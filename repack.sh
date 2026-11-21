@@ -14,12 +14,35 @@
 #   ./repack.sh build                      # build both overlay APKs into ./out/
 #   ./repack.sh bake  LineageOS-...-ext4-gsi.img.xz   # build + inject into the GSI
 #
+# `bake` also adds the system-side fixes from README Part 5.5 (NFC init rc, ...).
+#
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/out"
 ANDROID_JAR="${ANDROID_JAR:?set ANDROID_JAR to an android.jar, e.g. \$ANDROID_SDK/platforms/android-36.1/android.jar}"
 OVERLAY_DIR_IN_IMG="system/product/overlay"   # verify after mounting; GSIs are often nested one level
+SYSTEM_IN_IMG="system"                         # /system inside the image (same nesting as above)
+
+put_file() {
+  # Add or replace one file in the image.
+  # $1 = image, $2 = host file, $3 = path in image, $4 = SELinux label for a NEW file
+  # (a replaced file keeps the label it had; default u:object_r:system_file:s0).
+  local img="$1" src="$2" dst="$3" label="${4:-u:object_r:system_file:s0}" keep="$OUT/.selinux"
+  [ -f "$src" ] || { echo "missing $src" >&2; exit 1; }
+  rm -f "$keep"
+  debugfs -R "ea_get -f $keep $dst security.selinux" "$img" >/dev/null 2>&1 || true
+  debugfs -w -R "rm $dst" "$img" 2>/dev/null || true
+  debugfs -w -R "write $src $dst" "$img"
+  debugfs -w -R "sif $dst mode 0100644" "$img"
+  debugfs -w -R "sif $dst uid 0" "$img"
+  debugfs -w -R "sif $dst gid 0" "$img"
+  if [ -s "$keep" ]; then
+    debugfs -w -R "ea_set -f $keep $dst security.selinux" "$img"
+  else
+    debugfs -w -R "ea_set $dst security.selinux ${label}\\000" "$img"
+  fi
+}
 
 build_one() {
   # $1 = overlay source dir (contains AndroidManifest.xml + res/)
@@ -67,6 +90,9 @@ do_bake() {
     # Set SELinux label to match siblings (typically u:object_r:system_file:s0):
     debugfs -w -R "ea_set $OVERLAY_DIR_IN_IMG/${name}.apk security.selinux u:object_r:system_file:s0\\000" "$img"
   done
+
+  echo ">> NFC: init rc that starts the vendor NXP HAL (README Part 5.5)"
+  put_file "$img" "$HERE/init/vegas26-nfc.rc" "$SYSTEM_IN_IMG/etc/init/vegas26-nfc.rc"
 
   echo ">> fsck + recompress"
   e2fsck -fy "$img" || true

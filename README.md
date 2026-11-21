@@ -302,6 +302,13 @@ This step needs root, once. On this device:
 
 This is the one advanced, device-specific step and was not fully hardened in this writeup; treat it as a starting point and verify `cmd overlay list` shows your overlays enabled after a reboot.
 
+### 5.5 System fixes baked by `repack.sh`
+These live in `system` (not `/product`), so they come from `repack.sh bake` and have to be baked again into each new GSI image. They were found while porting another GSI (PixelOS 16) to this phone with the same stock vendor; see each item for what was tested where.
+
+**NFC.** On a GSI, NFC does not turn on and `com.android.nfc` ANRs every ~15 s (`init: Could not find 'android.hardware.nfc@1.2::INfc/default' for ctl.interface_start`). The vendor NXP HAL (`vendor.nfc_hal_service`) is `disabled` and only starts on `ro.vendor.hw.nfc=nq && persist.vendor.nfc.config_file_name=*`; on stock a Motorola component sets the second property, a GSI does not. `init/vegas26-nfc.rc` sets `persist.vendor.nfc.config_file_name=libnfc-nxp.conf` when `ro.vendor.hw.nfc=nq`, and `bake` puts it in `/system/etc/init`.
+- Verified on LineageOS 23.2 microG by setting the same property at boot from a Magisk module (`resetprop`): no more ANRs, the HAL registers, `dumpsys nfc` shows `mState=on`. The init-rc form is what the PixelOS port ships (HAL registered there).
+- Without baking: a Magisk module whose `post-fs-data.sh` runs `resetprop persist.vendor.nfc.config_file_name libnfc-nxp.conf` does the same.
+
 ---
 
 ## Troubleshooting
@@ -318,6 +325,7 @@ This is the one advanced, device-specific step and was not fully hardened in thi
 | Signal bars but no data, "!" on the signal icon | Wrong or missing APN | Select the `ereseller` (or your carrier's) APN, toggle airplane mode (Part 4.1). |
 | Calls fail but data works | GSI lacks MediaTek IMS | Use LineageOS 23.2 microG (ships `com.mediatek.ims`). |
 | Overlay install fails: "signed with different certificates" | Framework overlays can't be sideloaded on this GSI | Deploy to `/product/overlay` with root (Part 5.4). |
+| NFC won't turn on, `com.android.nfc` ANRs every ~15 s | Vendor NXP HAL never started (`persist.vendor.nfc.config_file_name` unset on a GSI) | Bake `init/vegas26-nfc.rc` with `repack.sh` (Part 5.5). |
 
 ## How updates work
 
@@ -334,6 +342,7 @@ Your `/data`, apps, settings, your `/product` overlays (Part 5), and your modem 
 - `README.md` , this guide.
 - `overlays/cutout/` , framework RRO source for a centered display cutout (edit `res/values/config.xml` to match your camera).
 - `overlays/aperture-aux/` , RRO source to make the stock Aperture camera expose the 2nd rear lens.
+- `init/vegas26-nfc.rc` , init snippet that starts the vendor NFC HAL on a GSI (Part 5.5).
 - `repack.sh` , reference script to build the overlays and (optionally) bake them into an ext4 GSI's `/system/product/overlay`, for anyone who wants a prebuilt image instead of deploying overlays by hand.
 
 ## Credits and prior work
