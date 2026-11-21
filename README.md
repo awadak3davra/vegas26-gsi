@@ -317,6 +317,18 @@ These live in `system` (not `/product`), so they come from `repack.sh bake` and 
 **SurfaceFlinger on the little cores.** AOSP's `/system/etc/task_profiles.json` puts the SurfaceFlinger main thread (`SFMainPolicy`) and RenderEngine (`SFRenderEnginePolicy`) in the `system-background` cpuset, which on MT6835 (2x A76 + 6x A55) is cpus 0-5, the A55 cores only. The stock MediaTek SurfaceFlinger moves these threads itself; a GSI SurfaceFlinger does not, and a perfetto trace showed SurfaceFlinger "stuffing" and missed frames. `bake` switches both policies to the `foreground` cpuset (all cores); the vendor `task_profiles.json` does not override them. LineageOS 23.2 has the same AOSP values.
 - Built into the PixelOS 16 GSI and boots there; the jank improvement has **not been measured** yet, and it is **untested on LineageOS**. To check: `adb shell 'cat /proc/$(pidof surfaceflinger)/cpuset'` should print `/foreground`.
 
+### 5.6 Double tap to wake (needs a SystemUI change, not fixable by overlay)
+Double tap to wake does not work on a GSI here, and an overlay or a keylayout alone cannot fix it. How it works on the stock vendor:
+1. The gesture is armed by writing `49` to `/sys/class/touchscreen/primary/gesture` (`48` = off). On stock, Motorola's touch service does this; nothing does on a GSI.
+2. With the screen off, the FocalTech driver reports a double tap as `KEY_F4` on the input device `double-tap`.
+3. The vendor sensors sub-HAL `sensors.moto.so` grabs that input device (`EVIOCGRAB`) and turns it into the wake-up sensor `dt-gesture`, type `com.motorola.sensor.double_tap` (65566), reporting mode `SPECIAL_TRIGGER`. Because of the grab, `getevent` and InputReader never see the key, so a `double-tap.kl` keylayout does nothing.
+4. SystemUI Doze has to listen to that sensor: overlay `config_dozeDoubleTapSensorType=com.motorola.sensor.double_tap` on `android`. Not `com.motorola.sensor.tap` ("Mot Tap"): that is an unrelated sensor-hub sensor.
+5. But AOSP SystemUI `DozeSensors` registers doze sensors with `requestTriggerSensor()`, which only accepts `ONE_SHOT` sensors, so `dt-gesture` is refused (`AsyncSensorManager: Requesting ... failed`). LineageOS 23.2 `DozeSensors` is the same (checked in `lineage-23.2` source).
+
+So it needs all three: the gesture write at boot, the sensor-type overlay, and a SystemUI built with `patches/frameworks_base-DozeSensors-non-one-shot-sensors.patch` (registers non-one-shot wake-up sensors with a normal listener; applies cleanly to LineageOS `lineage-23.2`). That means building the GSI, not repacking it. On the PixelOS 16 GSI with all three, a screen-off double tap wakes the phone; detection itself is in the touch firmware, which sometimes misses a tap. Not tested on LineageOS.
+
+To check the first part on any build: `adb shell dumpsys sensorservice | grep -i -A3 dt-gesture` lists the sensor, and while dozing an active connection from `com.android.systemui` means Doze is listening.
+
 ---
 
 ## Troubleshooting
@@ -354,6 +366,7 @@ Your `/data`, apps, settings, your `/product` overlays (Part 5), and your modem 
 - `overlays/aperture-aux/` , RRO source to make the stock Aperture camera expose the 2nd rear lens.
 - `init/vegas26-nfc.rc` , init snippet that starts the vendor NFC HAL on a GSI (Part 5.5).
 - `props/system.prop` , system properties `repack.sh` writes into `/system/build.prop` (Part 5.5).
+- `patches/frameworks_base-DozeSensors-non-one-shot-sensors.patch` , SystemUI change needed for double tap to wake, for people building a GSI (Part 5.6).
 - `repack.sh` , reference script to build the overlays and (optionally) bake them into an ext4 GSI's `/system/product/overlay`, for anyone who wants a prebuilt image instead of deploying overlays by hand.
 
 ## Credits and prior work
