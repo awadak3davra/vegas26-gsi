@@ -14,7 +14,7 @@
 #   ./repack.sh build                      # build both overlay APKs into ./out/
 #   ./repack.sh bake  LineageOS-...-ext4-gsi.img.xz   # build + inject into the GSI
 #
-# `bake` also adds the system-side fixes from README Part 5.5 (NFC init rc, props/system.prop, ...).
+# `bake` also adds the system-side fixes from README Part 5.5 (NFC init rc, props/system.prop, SurfaceFlinger cpuset).
 #
 set -euo pipefail
 
@@ -107,6 +107,19 @@ do_bake() {
     echo "$line" >> "$OUT/build.prop"
   done < "$HERE/props/system.prop"
   put_file "$img" "$OUT/build.prop" "$SYSTEM_IN_IMG/build.prop"
+
+  echo ">> task_profiles: SurfaceFlinger main + RenderEngine on all cores (README Part 5.5)"
+  # AOSP puts SFMainPolicy / SFRenderEnginePolicy in cpuset system-background, which on MT6835
+  # is the little cores only. Switch both to foreground (all cores).
+  local tp="$OUT/task_profiles.json" p
+  rm -f "$tp"
+  debugfs -R "dump $SYSTEM_IN_IMG/etc/task_profiles.json $tp" "$img"
+  sed -i -E '/"Name": "SF(Main|RenderEngine)Policy"/,/"Path"/ s/"system-background"/"foreground"/' "$tp"
+  for p in SFMainPolicy SFRenderEnginePolicy; do
+    grep -A8 "\"Name\": \"$p\"" "$tp" | grep -q '"Path": "foreground"' \
+      || { echo "WARN: $p not found as expected, task_profiles.json left as is" >&2; tp=""; break; }
+  done
+  [ -z "$tp" ] || put_file "$img" "$tp" "$SYSTEM_IN_IMG/etc/task_profiles.json"
 
   echo ">> fsck + recompress"
   e2fsck -fy "$img" || true

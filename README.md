@@ -314,6 +314,9 @@ These live in `system` (not `/product`), so they come from `repack.sh bake` and 
 - This does not make Play Integrity STRONG: the TEE reports the bootloader as unlocked.
 - Without baking: put the same line in a Magisk module's `system.prop`.
 
+**SurfaceFlinger on the little cores.** AOSP's `/system/etc/task_profiles.json` puts the SurfaceFlinger main thread (`SFMainPolicy`) and RenderEngine (`SFRenderEnginePolicy`) in the `system-background` cpuset, which on MT6835 (2x A76 + 6x A55) is cpus 0-5, the A55 cores only. The stock MediaTek SurfaceFlinger moves these threads itself; a GSI SurfaceFlinger does not, and a perfetto trace showed SurfaceFlinger "stuffing" and missed frames. `bake` switches both policies to the `foreground` cpuset (all cores); the vendor `task_profiles.json` does not override them. LineageOS 23.2 has the same AOSP values.
+- Built into the PixelOS 16 GSI and boots there; the jank improvement has **not been measured** yet, and it is **untested on LineageOS**. To check: `adb shell 'cat /proc/$(pidof surfaceflinger)/cpuset'` should print `/foreground`.
+
 ---
 
 ## Troubleshooting
@@ -332,6 +335,7 @@ These live in `system` (not `/product`), so they come from `repack.sh bake` and 
 | Overlay install fails: "signed with different certificates" | Framework overlays can't be sideloaded on this GSI | Deploy to `/product/overlay` with root (Part 5.4). |
 | NFC won't turn on, `com.android.nfc` ANRs every ~15 s | Vendor NXP HAL never started (`persist.vendor.nfc.config_file_name` unset on a GSI) | Bake `init/vegas26-nfc.rc` with `repack.sh` (Part 5.5). |
 | Apps that need hardware key attestation fail; logcat: `RKP is disabled. System configured with no default URL` | No `remote_provisioning.hostname`, no factory attestation keybox on this phone | Bake `props/system.prop` with `repack.sh`, or set it from a Magisk `system.prop` (Part 5.5). |
+| UI micro-stutter, perfetto shows SurfaceFlinger stuffing / missed frames | SurfaceFlinger main thread and RenderEngine pinned to the little cores by AOSP `task_profiles.json` | Bake with `repack.sh` (moves them to the `foreground` cpuset, Part 5.5). Effect not measured yet. |
 
 ## How updates work
 
